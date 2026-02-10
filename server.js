@@ -48,25 +48,6 @@ app.get('/health', (req, res) => {
 });
 
 // =======================
-// START SERVER & DATABASE CONNECTION
-// =======================
-// Test database connection
-pool
-  .query('SELECT NOW()')
-  .then(() => {
-    console.log('✅ Connected to PostgreSQL database');
-
-    const PORT = process.env.PORT || 4000;
-    app.listen(PORT, () => {
-      console.log(`🚀 Server started on http://localhost:${PORT}`);
-    });
-  })
-  .catch((err) => {
-    console.error('❌ Database connection error:', err);
-    process.exit(1);
-  });
-
-// =======================
 // ERROR HANDLING
 // =======================
 
@@ -82,6 +63,30 @@ app.use((err, req, res, next) => {
 });
 
 // =======================
+// DATABASE CONNECTION TEST (for local dev)
+// =======================
+if (process.env.NODE_ENV !== 'production') {
+  pool
+    .query('SELECT NOW()')
+    .then(() => {
+      console.log('✅ Connected to PostgreSQL database');
+    })
+    .catch((err) => {
+      console.error('❌ Database connection error:', err);
+    });
+}
+
+// =======================
+// START SERVER (only for local development)
+// =======================
+if (require.main === module) {
+  const PORT = process.env.PORT || 4000;
+  app.listen(PORT, () => {
+    console.log(`🚀 Server started on http://localhost:${PORT}`);
+  });
+}
+
+// =======================
 // HANDLE UNHANDLED PROMISES & EXCEPTIONS
 // =======================
 process.on('unhandledRejection', (err) => {
@@ -92,4 +97,5 @@ process.on('uncaughtException', (err) => {
   console.error('Uncaught Exception:', err);
 });
 
-module.exports = { app, pool };
+// Export for Vercel (default export must be the Express app)
+module.exports = app;
